@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
+import { use } from "react";
 
-export default function AnalysisPage(){
+export default function AnalysisPage({ params }: { params: Promise<{ id: string }> }){
     const router = useRouter();
-    const params = useParams();
-    const id = params.id;
+    const resolvedParams = use(params);
+    const id = resolvedParams.id;
 
     return (
         <div>
