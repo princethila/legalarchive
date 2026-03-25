@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey);
 export async function getJudgments() {
   const { data, error } = await supabase
     .from('judgments')
-    .select('id, citation, case_name, judgement_date, coram, judgment_text, parties, court_name, view_count, sections, tags, embedding')
+    .select('id, citation, case_name, judgement_date, coram, judgment_text, parties, court_name, view_count, sections, tags')
     // .order('judgement_date', { ascending: false });
 
   if (error) throw new Error(error.message);

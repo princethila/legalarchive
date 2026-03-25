@@ -25,5 +25,5 @@ export interface Judgment {
     level_2?: string;
     level_3?: string[];
   };
-  embedding: number[];
+  embedding?: number[];
 }
