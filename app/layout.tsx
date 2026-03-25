@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,11 +16,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en">
+      <body className={`${inter.className} min-h-screen`}>
+        {/* Subtle Top Nav */}
+        <nav className="h-12 border-b border-slate-200 flex items-center px-6 justify-between bg-white sticky top-0 z-50">
+          <div className="flex items-center gap-4">
+            <span className="font-bold tracking-tighter text-sm uppercase">Legal Archive</span>
+            <div className="h-4 w-[1px] bg-slate-200" />
+            <span className="text-xs text-slate-500 font-medium">Discover South African Court Judgments</span>
+          </div>
+          <div className="flex gap-4 text-xs font-medium text-slate-600">
+            <a href="/" className="hover:text-black">Discovery</a>
+            <a href="/research" className="hover:text-black">Research Hub</a>
+          </div>
+        </nav>
+
+        <main className="max-w-[1600px] mx-auto">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
