@@ -3,11 +3,18 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Eye, Search, Filter } from 'lucide-react';
 import { Judgment } from '../types/database';
+import { useRouter } from 'next/navigation';
 
 
-export default function DiscoveryTable({ data }: { data: Judgment[] }) {
+export default function DiscoveryTable({ data, totalCount, currentPage }: { data: Judgment[], totalCount: number, currentPage: number }) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const router = useRouter();
+    const totalPages = Math.ceil(totalCount / 20);
+
+    const goToPage = (page: number) => {
+        router.push(`/?page=${page}`);
+    };
 
     const toggleRow = (id: string) => {
         setExpandedId(expandedId === id ? null : id);
@@ -106,6 +113,28 @@ export default function DiscoveryTable({ data }: { data: Judgment[] }) {
                         <p>No judgments found.</p>
                     </div>
                 )}
+            </div>
+            {/* Pagination UI */}
+            <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50">
+                <span className="text-xs text-slate-500">
+                Showing Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                <button 
+                    disabled={currentPage <= 1}
+                    onClick={() => goToPage(currentPage - 1)}
+                    className="px-3 py-1 text-xs border border-slate-300 disabled:opacity-50"
+                >
+                    Previous
+                </button>
+                <button 
+                    disabled={currentPage >= totalPages}
+                    onClick={() => goToPage(currentPage + 1)}
+                    className="px-3 py-1 text-xs border border-slate-300 disabled:opacity-50"
+                >
+                    Next
+                </button>
+                </div>
             </div>
         </div>
     )

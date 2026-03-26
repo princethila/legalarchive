@@ -1,17 +1,27 @@
-"use client";
+import { getJudgmentById } from '@/app/lib/server';
+import { notFound } from 'next/navigation';
 
-import { useRouter, useParams } from "next/navigation";
-import { use } from "react";
+export default async function JudgmentPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params; 
+    const judgment = await getJudgmentById(id);
 
-export default function AnalysisPage({ params }: { params: Promise<{ id: string }> }){
-    const router = useRouter();
-    const resolvedParams = use(params);
-    const id = resolvedParams.id;
+    if (!judgment) notFound();
 
-    return (
-        <div>
-            <h1>Analysis Page for {id}</h1>
-            <button onClick={() => router.push("/")}>Go Back</button>
+  return (
+    <div className="max-w-4xl mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-4">{judgment.case_name}</h1>
+      <div className="flex gap-4 mb-8 text-sm text-slate-500">
+        <span>{judgment.citation}</span>
+        <span>{judgment.court_name}</span>
+      </div>
+      
+      <div className="prose prose-slate max-w-none">
+        <h2 className="text-lg font-bold uppercase tracking-widest border-b pb-2">Full Judgment</h2>
+        {/* Render the massive text here */}
+        <div className="whitespace-pre-wrap mt-4 text-slate-800 leading-relaxed">
+          {judgment.judgment_text}
         </div>
-    );
+      </div>
+    </div>
+  );
 }

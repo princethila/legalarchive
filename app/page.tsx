@@ -1,13 +1,16 @@
 import DiscoveryTable from './components/DiscoveryTable';
-import { getJudgments } from './lib/supabase';
+import { getJudgments } from './lib/server';
 
-export default async function Home() {
-  const judgments = await getJudgments();
+export default async function Home({searchParams}: { searchParams: Promise<{ page?: string }>;  }) {
+  const resolvedParams = await searchParams; 
+  const currentPage = Number(resolvedParams.page) || 1;
+  const { data, count } = await getJudgments(currentPage, 20);
+
   return (
     <div className="flex flex-col md:flex-row">
       {/* Discovery Feed */}
       <div className="flex-1 border-r border-slate-200">
-        <DiscoveryTable data={judgments} />
+        <DiscoveryTable data={data} totalCount={count} currentPage={currentPage} />
       </div>
       {/* Trending Column (Desktop) */}
       <aside className="hidden lg:block w-80 p-4">
