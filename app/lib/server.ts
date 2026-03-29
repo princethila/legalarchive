@@ -37,3 +37,23 @@ export async function getJudgmentById(id: string) {
   if (error) throw new Error(error.message);
   return data as Judgment;
 }
+
+
+export async function getSimilarJudgments(judgmentId: string, embedding: number[]) {
+  
+
+  // 2. Call the RPC function we created in SQL
+  const { data, error } = await supabaseAdmin.rpc('match_judgments', {
+    query_embedding: embedding,
+    match_threshold: 0.5, // Adjust based on how strict you want the match
+    match_count: 5,
+  });
+
+  if (error) {
+    console.error('Similarity error:', error);
+    return [];
+  }
+
+  // 3. Filter out the current case so it doesn't recommend itself
+  return data.filter((j: any) => j.id !== judgmentId);
+}

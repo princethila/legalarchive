@@ -4,10 +4,12 @@ import { Eye, FileText, Share2, Download, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import JudgementSidebar from '@/app/components/JudgementSidebar';
 import MobileToggleLayout from '@/app/components/MobileToggleLayout';
+import { getSimilarJudgments } from '@/app/lib/server';
 
 export default async function JudgmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params; 
     const judgment = await getJudgmentById(id);
+    const similarCases = await getSimilarJudgments(id, judgment.embedding || []);
 
     if (!judgment) notFound();
 
@@ -50,7 +52,7 @@ export default async function JudgmentPage({ params }: { params: Promise<{ id: s
       <div className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
         {/* Left Column: The Text */}
         <MobileToggleLayout 
-                sidebar={<JudgementSidebar judgmentId={judgment.id} sections={judgment.sections} />}
+                sidebar={<JudgementSidebar judgmentId={judgment.id} sections={judgment.sections} similar_cases={similarCases}/>}
             >
         <article className='flex-1 p-6 lg:p-12 border-r border-slate-100 max-w-4xl'>
             <header className='mb-12'>
