@@ -5,9 +5,17 @@ import Link from 'next/link';
 import JudgementSidebar from '@/app/components/JudgementSidebar';
 import MobileToggleLayout from '@/app/components/MobileToggleLayout';
 import { getSimilarJudgments } from '@/app/lib/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY!
+);
+
 
 export default async function JudgmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params; 
+    await supabaseAdmin.rpc('increment_view_count', { target_id: id });
     const judgment = await getJudgmentById(id);
     const similarCases = await getSimilarJudgments(id, judgment.embedding || []);
 

@@ -1,4 +1,5 @@
 import DiscoveryTable from './components/DiscoveryTable';
+import TrendingSidebar from './components/TrendingSidebar';
 import { getJudgments } from './lib/server';
 
 export default async function Home({searchParams}: { searchParams: Promise<{ page?: string }>;  }) {
@@ -13,9 +14,9 @@ export default async function Home({searchParams}: { searchParams: Promise<{ pag
         <DiscoveryTable data={data} totalCount={count} currentPage={currentPage} />
       </div>
       {/* Trending Column (Desktop) */}
-      <aside className="hidden lg:block w-80 p-4">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Trending Judgments</h3>
-      </aside>
+      <div className="hidden lg:block w-[350px] shrink-0 bg-slate-50/30">
+        <TrendingSidebar />
+      </div>
     </div>
   );
 }
