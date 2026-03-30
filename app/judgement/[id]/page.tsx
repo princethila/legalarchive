@@ -15,7 +15,10 @@ export const supabaseAdmin = createClient(
 
 export default async function JudgmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params; 
-    await supabaseAdmin.rpc('increment_view_count', { target_id: id });
+    await Promise.all([
+        supabaseAdmin.rpc('increment_view_count', { target_id: id }), // Global count
+        supabaseAdmin.from('judgment_views').insert({ judgment_id: id }) // Temporal log
+        ]);
     const judgment = await getJudgmentById(id);
     const similarCases = await getSimilarJudgments(id, judgment.embedding || []);
 

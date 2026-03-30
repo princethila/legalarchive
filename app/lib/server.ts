@@ -16,7 +16,7 @@ export async function getJudgments(page: number = 1, pageSize: number = 20) {
   const { data, error, count } = await supabaseAdmin
     .from('judgments')
     .select('id, citation, case_name, judgement_date, court_name, view_count, tags, sections', { count: 'exact' })
-    .order('judgement_date', { ascending: false })
+    .order('judgement_date', { ascending: true })
     .range(from, to);
 
   if (error) throw new Error(error.message);
