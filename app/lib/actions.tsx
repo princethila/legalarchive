@@ -10,7 +10,6 @@ export const supabaseAdmin = createClient(
 
 
 
-
 export async function getTrending(windowHours: number = 120, limitCount: number = 8){
     const { data, error } = await supabaseAdmin.rpc('get_trending_judgments', {
     window_hours: windowHours,

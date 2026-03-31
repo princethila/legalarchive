@@ -9,9 +9,16 @@ export const supabaseAdmin = createClient(
   process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface TrendingItem {
+  id: string;
+  case_name: string;
+  recent_views: number;
+  total_views: number;
+}
+
 export default async function TrendingSidebar() {
 
-    const trending = await getTrending(24, 8);
+    const trending: TrendingItem[] = await getTrending(24, 8);
 
     return(
         <aside className="w-full h-full p-6 bg-white">
@@ -29,8 +36,7 @@ export default async function TrendingSidebar() {
                 <Link 
                     key={item.id} 
                     href={`/judgement/${item.id}`}
-                    className="group block relative"
-                >
+                    className="group block relative">
                     <div className="flex gap-3">
                     <span className="text-[10px] font-mono text-slate-300 mt-1">
                         {(index + 1).toString().padStart(2, '0')}
