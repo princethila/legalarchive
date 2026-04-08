@@ -9,15 +9,32 @@ export const supabaseAdmin = createClient(
 );
 
 
-export async function getJudgments(page: number = 1, pageSize: number = 20) {
+export async function getJudgments(page: number = 1, pageSize: number = 20, params?: { q?: string; sort?: string; order?: string; court?: string}) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const { data, error, count } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('judgments')
-    .select('id, citation, case_name, judgement_date, court_name, view_count, tags, sections', { count: 'exact' })
-    .order('judgement_date', { ascending: true })
-    .range(from, to);
+    .select('id, citation, case_name, judgement_date, court_name, view_count, tags, sections', { count: 'exact' });
+
+  // 1. Semantic/Text Search
+  if (params?.q) {
+    // Searches across both case_name and citation
+    query = query.or(`case_name.ilike.%${params.q}%,citation.ilike.%${params.q}%`);
+  }
+
+  // 2. Metadata Filtering (e.g., Court)
+  if (params?.court) {
+    query = query.eq('court_name', params.court);
+  }
+
+  // 3. Dynamic Sorting
+  const sortCol = params?.sort || 'judgement_date';
+  const ascending = params?.order === 'asc';
+  query = query.order(sortCol, { ascending });
+
+  // 4. Pagination Range
+  const { data, error, count } = await query.range(from, to);
 
   if (error) throw new Error(error.message);
   return { 

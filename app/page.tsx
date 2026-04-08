@@ -2,10 +2,25 @@ import DiscoveryTable from './components/DiscoveryTable';
 import TrendingSidebar from './components/TrendingSidebar';
 import { getJudgments } from './lib/server';
 
-export default async function Home({searchParams}: { searchParams: Promise<{ page?: string }>;  }) {
+
+type SearchParams = Promise<{ 
+  page?: string; 
+  q?: string; 
+  sort?: string; 
+  order?: string 
+}>; 
+
+export default async function Home({searchParams}: { searchParams: SearchParams }) {
   const resolvedParams = await searchParams; 
   const currentPage = Number(resolvedParams.page) || 1;
-  const { data, count } = await getJudgments(currentPage, 20);
+  const query = resolvedParams.q || "";
+  const sort = resolvedParams.sort || "judgement_date";
+  const order = resolvedParams.order || "desc";
+  const { data, count } = await getJudgments(currentPage, 20, { 
+        q: query, 
+        sort, 
+        order 
+    });
 
   return (
     <div className="flex flex-col md:flex-row">
