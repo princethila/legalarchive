@@ -2,12 +2,13 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { ChevronDown, ChevronUp,ArrowUpDown, Eye, Search, Filter } from 'lucide-react';
-import { Judgment } from '../types/database';
+import { Judgment, FilterOptions } from '../types/database';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 
-export default function DiscoveryTable({ data, totalCount, currentPage }: { data: Judgment[], totalCount: number, currentPage: number }) {
+export default function DiscoveryTable({ data, totalCount, currentPage, filterOptions }: { data: Judgment[], totalCount: number, currentPage: number, filterOptions: FilterOptions }) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
     const router = useRouter();
     const totalPages = Math.ceil(totalCount / 20);
     const pathname = usePathname();
@@ -15,16 +16,48 @@ export default function DiscoveryTable({ data, totalCount, currentPage }: { data
     const [isPending, startTransition] = useTransition();
     const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || "");
 
-    const updateSearch = (term: string) => {
-        setSearchTerm(term);
-        const params = new URLSearchParams(searchParams);
-        if (term) params.set('q', term); else params.delete('q');
+    const selectedCourt = searchParams.get('court');
+    const selectedCategory = searchParams.get('category');
+    const selectedYear = searchParams.get('year') ? Number(searchParams.get('year')) : null;
+
+  
+    const isCourtAvailable = (court: string) => {
+        return filterOptions.counts.some(item => 
+            item.court_name === court &&
+            (!selectedCategory || item.category === selectedCategory) &&
+            (!selectedYear || item.year === selectedYear)
+        );
+    };
+
+ 
+    const isCategoryAvailable = (cat: string) => {
+        return filterOptions.counts.some(item => 
+            item.category === cat &&
+            (!selectedCourt || item.court_name === selectedCourt) &&
+            (!selectedYear || item.year === selectedYear)
+        );
+    };
+
+
+    const isYearAvailable = (yr: number) => {
+        return filterOptions.counts.some(item => 
+            item.year === yr &&
+            (!selectedCourt || item.court_name === selectedCourt) &&
+            (!selectedCategory || item.category === selectedCategory)
+        );
+    };
+
+    const setParam = (key: string, value: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) params.set(key, value); else params.delete(key);
+        params.set('page', '1'); // Reset pagination on filter change
         
         startTransition(() => {
             router.replace(`${pathname}?${params.toString()}`);
         });
     };
 
+    
     const toggleSort = (column: string) => {
         const params = new URLSearchParams(searchParams);
         const currentSort = params.get('sort');
@@ -90,11 +123,116 @@ export default function DiscoveryTable({ data, totalCount, currentPage }: { data
                 </div>
                 
                 {/* Minimalist Filter Toggle */}
-                <button className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-colors">
+                <button 
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                        showFilters || searchParams.get('court') || searchParams.get('category') || searchParams.get('year')
+                        ? 'bg-slate-900 text-white border-slate-900' 
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                    }`}
+                >
                     <Filter className="h-3 w-3" />
-                    Filter
+                    {showFilters ? 'Hide Filters' : 'Filter'}
                 </button>
             </div>
+            
+
+            {/* Filter Drawer */}
+            {showFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-slate-50 border-b border-slate-200 animate-in slide-in-from-top-1 duration-200">
+                    {/* Court Filter */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Court</label>
+                        <select 
+                            value={searchParams.get('court') || ""}
+                            onChange={(e) => setParam('court', e.target.value)}
+                            className="w-full bg-white border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-500 outline-none rounded-sm transition-colors"
+                        >
+                            <option value="">All Jurisdictions</option>
+                            {filterOptions.courts.map(court => {
+                                const total = filterOptions.counts
+                                .filter(c => c.court_name === court)
+                                .reduce((acc, curr) => acc + curr.doc_count, 0);
+                                
+                                return (
+                                <option key={court} value={court}>
+                                    {court} ({total.toLocaleString()})
+                                </option>
+                                );
+                            })}
+                        </select>
+                    </div>
+
+                    {/* Category Filter */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Category</label>
+                        <select 
+                            value={searchParams.get('category') || ""}
+                            onChange={(e) => setParam('category', e.target.value)}
+                            className="w-full bg-white border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-500 outline-none rounded-sm transition-colors"
+                        >
+                            <option value="">All Categories</option>
+                            {filterOptions.categories.map(category => {
+                                const available = isCategoryAvailable(category);
+                                return (
+                                    <option 
+                                        key={category} 
+                                        value={category} 
+                                        disabled={!available}
+                                        className={!available ? 'text-slate-300' : 'text-slate-900'}
+                                    >
+                                        {category} {!available && "(0)"}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </div>
+
+                    {/* Year Filter */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Year</label>
+                        {/* <input 
+                            type="number" 
+                            placeholder="YYYY"
+                            value={searchParams.get('year') || ""}
+                            onChange={(e) => setParam('year', e.target.value)}
+                            className="w-full bg-white border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-500 outline-none rounded-sm transition-colors"
+                        /> */}
+                        <select 
+                            value={searchParams.get('year') || ""}
+                            onChange={(e) => setParam('year', e.target.value)}
+                            className="w-full bg-white border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-500 outline-none rounded-sm transition-colors"
+                        >
+                            <option value="">All Years</option>
+                            {filterOptions.years.map(year => {
+                                const available = isYearAvailable(year);
+                                return (
+                                    <option 
+                                        key={year} 
+                                        value={year} 
+                                        disabled={!available}
+                                        className={!available ? 'text-slate-300' : 'text-slate-900'}
+                                    >
+                                        {year} {!available && "(0)"}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </div>
+                    <div className="md:col-span-3 flex justify-end pt-2">
+                        <button 
+                            onClick={() => {
+                                router.push(pathname); // Clears all searchParams
+                                setSearchTerm("");
+                            }}
+                            className="text-[9px] font-bold uppercase tracking-tighter text-slate-400 hover:text-emerald-600 transition-colors"
+                        >
+                            Clear All Filters [×]
+                        </button>
+                    </div>
+                </div>
+            )}
+            
 
             {/* Table Header with Sort Triggers */}
             <div className="grid grid-cols-12 bg-slate-50/50 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">

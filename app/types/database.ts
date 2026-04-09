@@ -27,3 +27,16 @@ export interface Judgment {
   };
   embedding?: number[];
 }
+
+
+export interface FilterOptions {
+  courts: string[];
+  categories: string[];
+  years: number[];
+  counts: {
+    court_name: string;
+    category: string;
+    year: number;
+    doc_count: number;
+  }[];
+}

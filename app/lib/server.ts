@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Judgment } from '../types/database';
+import { error } from 'console';
 
 // Service Role Key is safe here because this file 
 // should only be imported by Server Components
@@ -9,7 +10,7 @@ export const supabaseAdmin = createClient(
 );
 
 
-export async function getJudgments(page: number = 1, pageSize: number = 20, params?: { q?: string; sort?: string; order?: string; court?: string}) {
+export async function getJudgments(page: number = 1, pageSize: number = 20, params?: { q?: string; sort?: string; order?: string; court?: string, category?: string, year?: string }) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -25,7 +26,20 @@ export async function getJudgments(page: number = 1, pageSize: number = 20, para
 
   // 2. Metadata Filtering (e.g., Court)
   if (params?.court) {
+    // Note: URL encoding turns ":" and spaces into "+" or "%3A". 
+    // Supabase handles the decoding, but ensure column name matches exactly.
     query = query.eq('court_name', params.court);
+  }
+
+  if (params?.category) {
+    // If tags is a JSONB column
+    query = query.contains('tags', { level_1: params.category });
+  }
+
+  if (params?.year) {
+    const startOfYear = `${params.year}-01-01`;
+    const endOfYear = `${params.year}-12-31`;
+    query = query.gte('judgement_date', startOfYear).lte('judgement_date', endOfYear);
   }
 
   // 3. Dynamic Sorting
@@ -73,4 +87,31 @@ export async function getSimilarJudgments(judgmentId: string, embedding: number[
 
   // 3. Filter out the current case so it doesn't recommend itself
   return data.filter((j: any) => j.id !== judgmentId);
+}
+
+
+export async function getFilterOptions() {
+  const supabase = supabaseAdmin;
+
+  // We query our pre-computed stats view
+  const { data, error } = await supabase
+    .from('mv_judgment_stats')
+    .select('court_name, category, year, doc_count');
+
+  if (error || !data) {
+    return { 
+        courts: [], 
+        categories: [], 
+        years: [], 
+        counts: [] // Explicitly return an empty array, not undefined
+    };
+  }
+
+  // Aggregate the unique values from the summary
+  return {
+    courts: Array.from(new Set(data.map(d => d.court_name))),
+    categories: Array.from(new Set(data.map(d => d.category))),
+    years: Array.from(new Set(data.map(d => d.year))).sort((a, b) => b - a),
+    counts: data 
+  };
 }
